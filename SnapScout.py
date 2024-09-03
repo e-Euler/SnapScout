@@ -7,6 +7,13 @@ import socket
 import os 
 import argparse
 
+# selenium 4
+from selenium import webdriver
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from webdriver_manager.firefox import GeckoDriverManager
+
+#driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
+
 parser = argparse.ArgumentParser(
     description="""An alternative to eyewitness. This tool is python based and takes either a domain or a list of urls as a source of information. 
     If a domain is given as an argument, crt.sh will be queried for the domain and a list of subdomains will be generated. If a list
@@ -20,10 +27,10 @@ args = parser.parse_args()
 
 common_web_ports = [80,443,8080,8443]
 sock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-options = webdriver.ChromeOptions()
+options = webdriver.FirefoxOptions()
 options.add_argument('--ignore-ssl-errors')
 options.add_argument('--ignore-certificate-errors')
-driver = webdriver.Chrome(options=options)
+driver = driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
 driver.set_page_load_timeout(args.timeout)
 
 print("""
@@ -44,7 +51,13 @@ try:
     os.mkdir(path)
 except FileExistsError:
     print("Enumeration_Files directory already exists. Using it now.")
-
+try:
+    path="./Enumeration_Files/subdomains.txt"
+    with open(path, "x") as createfile:
+        pass
+    createfile.close()
+except FileExistsError:
+   print("subdomains.txt already exists. Using it now.")
 
 def take_screenshot(url,x):
     driver.get(url)
@@ -63,7 +76,7 @@ if args.inlist:
         #print(str(url))
         take_screenshot(str(url),x)
 elif args.domain:
-    crt_query = requests.get("http://crt.sh/?q=%s&output=json" % args.domain,verify=False)
+    crt_query = requests.get("https://crt.sh/?q=%s&output=json" % args.domain,verify=False)
     raw_data = crt_query.content
     refined_data = json.loads(raw_data)
     subdomain_list = []
@@ -74,7 +87,7 @@ elif args.domain:
         if x not in unique_subdomains:
             if "*" not in x:
                 unique_subdomains.append(x)
-    with open("./Enumeration_files/subdomains.txt", "w") as enumfile:
+    with open("./Enumeration_Files/subdomains.txt", "w") as enumfile:
         for x in unique_subdomains:
             enumfile.write(x + "\n")  
     for x in unique_subdomains:
